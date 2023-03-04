@@ -106,6 +106,37 @@ class GeneralChatMessageProcessor {
         }
     }
 
+    async build_bot_reply(user_id, request, reply) {
+        return {
+            "text": `<@${user_id}> ${reply}`,
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "plain_text",
+                        "text": reply,
+                    }
+                },
+                {
+                    "type": "divider"
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": `*<@${user_id}>*`
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": request,
+                        }
+                    ]
+                }
+            ]
+        };
+    }
+
     async reset() {
         await this.history.clear();
     }
@@ -121,6 +152,37 @@ class ImageProcessor {
         return "功能尚未开发完成！";
     }
 
+    async build_bot_reply(user_id, request, reply) {
+        return {
+            "text": `<@${user_id}> ${reply}`,
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "plain_text",
+                        "text": reply,
+                    }
+                },
+                {
+                    "type": "divider"
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": `*<@${user_id}>*`
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": request,
+                        }
+                    ]
+                }
+            ]
+        };
+    }
+
     async reset() { }
 }
 
@@ -128,37 +190,6 @@ const processors = {
     "C04SA96CTSQ": GeneralChatMessageProcessor.Instance, // #sqybi-gpt
     "C04SF5R7JF6": ImageProcessor.Instance, // #sqybi-gpt-image
 };
-
-const build_bot_reply = async (user_id, request, reply) => {
-    return {
-        "text": `<@${user_id}> ${reply}`,
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "plain_text",
-                    "text": reply,
-                }
-            },
-            {
-                "type": "divider"
-            },
-            {
-                "type": "context",
-                "elements": [
-                    {
-                        "type": "mrkdwn",
-                        "text": `*<@${user_id}>*`
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": request,
-                    }
-                ]
-            }
-        ]
-    };
-}
 
 slack_app.message(async ({ message, say, client }) => {
     if (!message.channel || !(message.channel in processors)) {
@@ -176,7 +207,7 @@ slack_app.message(async ({ message, say, client }) => {
     const processor = processors[message.channel];
     const reply = await processor.process(message);
     if (reply) {
-        await say(await build_bot_reply(message.user, message.text, reply));
+        await say(await processor.build_bot_reply(message.user, message.text, reply));
         await client.reactions.remove({
             channel: message.channel,
             timestamp: message.ts,
