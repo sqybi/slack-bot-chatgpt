@@ -6,6 +6,18 @@ import { JSONFile } from 'lowdb/node';
 import { Configuration, OpenAIApi } from 'openai';
 import bolt from '@slack/bolt';
 
+// LowDB database
+// Usage:
+//   db.data.xxx = xxx;
+//   await db.write();
+const db = new Low(new JSONFile(join(dirname(fileURLToPath(import.meta.url)), "database.json")));
+await db.read();
+
+// OpenAI initialization
+const openai = new OpenAIApi(new Configuration({
+    apiKey: db.data.openai.secret_key,
+}));
+
 // Data Structures
 class FixedLengthQueue {
     constructor(max_size) {
@@ -184,13 +196,7 @@ class ImageProcessor {
     }
 }
 
-// LowDB database
-// Usage:
-//   db.data.xxx = xxx;
-//   await db.write();
-const db = new Low(new JSONFile(join(dirname(fileURLToPath(import.meta.url)), "database.json")));
-await db.read();
-
+// Processors
 const processors = {};
 for (const channel of db.data.slack.general_chat_message.channels) {
     processors[channel] = new GeneralChatMessageProcessor();
@@ -198,11 +204,6 @@ for (const channel of db.data.slack.general_chat_message.channels) {
 for (const channel of db.data.slack.image.channels) {
     processors[channel] = new ImageProcessor();
 }
-
-// OpenAI initialization
-const openai = new OpenAIApi(new Configuration({
-    apiKey: db.data.openai.secret_key,
-}));
 
 // Slack app
 const slack_app = new bolt.App({
