@@ -90,9 +90,6 @@ class GeneralChatMessageProcessor {
     }
 
     async process(message) {
-        if (message.subtype) {
-            return null;
-        }
         const current_query = { "role": "user", "content": message.text };
         try {
             const response = await openai.createChatCompletion({
@@ -103,9 +100,9 @@ class GeneralChatMessageProcessor {
             const response_query = { "role": response_message.role, "content": response_message.content };
             this.history.push(current_query);
             this.history.push(response_query);
-            return `<@${message.user}>\n${response_message.content.trim()}`;
+            return `${response_message.content.trim()}`;
         } catch (error) {
-            return `<@${message.user}>\n遇到未知错误，请检查是否文本过长，或重试一次！\n> 错误信息：\n${this.format_exc(error)}`;
+            return `遇到未知错误，请检查是否文本过长，或重试一次！\n> 错误信息：\n${this.format_exc(error)}`;
         }
     }
 
@@ -124,7 +121,7 @@ class ImageProcessor {
         return "功能尚未开发完成！";
     }
 
-    async reset() {}
+    async reset() { }
 }
 
 const processors = {
@@ -132,14 +129,64 @@ const processors = {
     "C04SF5R7JF6": ImageProcessor.Instance, // #sqybi-gpt-image
 };
 
-slack_app.message(async ({ message, say }) => {
-    if (!(message.channel in processors)) {
+const build_bot_reply = async (user_id, request, reply) => {
+    return {
+        "text": `<@${user_id}> ${reply}`,
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": reply,
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": `*<@${user_id}>*`
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": request,
+                    }
+                ]
+            }
+        ]
+    };
+}
+
+slack_app.message(async ({ message, say, client }) => {
+    if (!message.channel || !(message.channel in processors)) {
         return;
     }
+    // Do not response non-user messages. Do not response when messages are in threads.
+    if (message.subtype || message.thread_ts) {
+        return null;
+    }
+    await client.reactions.add({
+        channel: message.channel,
+        timestamp: message.ts,
+        name: "memo",
+    });
     const processor = processors[message.channel];
     const reply = await processor.process(message);
     if (reply) {
-        await say(reply);
+        await say(await build_bot_reply(message.user, message.text, reply));
+        await client.reactions.remove({
+            channel: message.channel,
+            timestamp: message.ts,
+            name: "memo",
+        });
+        await client.reactions.add({
+            channel: message.channel,
+            timestamp: message.ts,
+            name: "heavy_check_mark",
+        });
     }
 });
 
@@ -150,7 +197,30 @@ slack_app.command("/reset", async ({ command, ack, say }) => {
     }
     const processor = processors[command.channel_id];
     await processor.reset();
-    await say(`用户 <@${command.user_id}> 已经重置会话记录，从现在开始，我已经忘记了之前的对话。`);
+    await say({
+        "text": `我已经忘记了我们之前的对话。现在可以重新开始向我提问了。\n> <@${command.user_id}> 已经重置会话历史`,
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": "我已经忘记了我们之前的对话。现在可以重新开始向我提问了。",
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": `<@${command.user_id}> 已经重置会话历史`,
+                    }
+                ]
+            }
+        ]
+    });
 });
 
 // Main
