@@ -6,25 +6,7 @@ import { JSONFile } from 'lowdb/node';
 import { Configuration, OpenAIApi } from 'openai';
 import bolt from '@slack/bolt';
 
-// LowDB database
-// Usage:
-//   db.data.xxx = xxx;
-//   await db.write();
-const db = new Low(new JSONFile(join(dirname(fileURLToPath(import.meta.url)), "database.json")));
-await db.read();
-
-// OpenAI initialization
-const openai = new OpenAIApi(new Configuration({
-    apiKey: db.data.openai.secret_key,
-}));
-
-// Slack app
-const slack_app = new bolt.App({
-    token: db.data.slack.bot_token,
-    appToken: db.data.slack.app_token,
-    socketMode: true,
-});
-
+// Data Structures
 class FixedLengthQueue {
     constructor(max_size) {
         this.max_size = max_size;
@@ -82,9 +64,6 @@ class GeneralChatMessageProcessor {
         this.history = new FixedLengthQueue(db.data.slack.general_chat_message.history_size);
     }
 
-    static instance = new GeneralChatMessageProcessor();
-    static get Instance() { return this.instance; }
-
     format_exc(error) {
         return "> " + error.toString().replaceAll("\n", "\n> ");
     }
@@ -139,30 +118,47 @@ class GeneralChatMessageProcessor {
 
     async reset() {
         await this.history.clear();
+        return true;
     }
 }
 
 class ImageProcessor {
-    constructor() { }
-
-    static instance = new ImageProcessor();
-    static get Instance() { return this.instance; }
+    constructor() {
+        this.image_size = db.data.slack.image.image_size;
+    }
 
     async process(message) {
-        return "功能尚未开发完成！";
+        try {
+            const response = await openai.createImage({
+                prompt: message.text,
+                n: 1,
+                size: this.image_size,
+            });
+            return response.data.data[0].url;
+        } catch (error) {
+            return `遇到未知错误，请检查是否文本过长、文字有不合适的内容，或重试一次！\n> 错误信息：\n${this.format_exc(error)}`;
+        }
     }
 
     async build_bot_reply(user_id, request, reply) {
+        let base_block = {
+            "type": "section",
+            "text": {
+                "type": "plain_text",
+                "text": reply,
+            }
+        }
+        if (reply.startsWith("http")) {
+            base_block = {
+                "type": "image",
+                "image_url": reply,
+                "alt_text": request
+            };
+        }
         return {
             "text": `<@${user_id}> ${reply}`,
             "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "plain_text",
-                        "text": reply,
-                    }
-                },
+                base_block,
                 {
                     "type": "divider"
                 },
@@ -183,13 +179,37 @@ class ImageProcessor {
         };
     }
 
-    async reset() { }
+    async reset() {
+        return false;
+    }
 }
 
-const processors = {
-    "C04SA96CTSQ": GeneralChatMessageProcessor.Instance, // #sqybi-gpt
-    "C04SF5R7JF6": ImageProcessor.Instance, // #sqybi-gpt-image
-};
+// LowDB database
+// Usage:
+//   db.data.xxx = xxx;
+//   await db.write();
+const db = new Low(new JSONFile(join(dirname(fileURLToPath(import.meta.url)), "database.json")));
+await db.read();
+
+const processors = {};
+for (const channel of db.data.slack.general_chat_message.channels) {
+    processors[channel] = new GeneralChatMessageProcessor();
+}
+for (const channel of db.data.slack.image.channels) {
+    processors[channel] = new ImageProcessor();
+}
+
+// OpenAI initialization
+const openai = new OpenAIApi(new Configuration({
+    apiKey: db.data.openai.secret_key,
+}));
+
+// Slack app
+const slack_app = new bolt.App({
+    token: db.data.slack.bot_token,
+    appToken: db.data.slack.app_token,
+    socketMode: true,
+});
 
 slack_app.message(async ({ message, say, client }) => {
     if (!message.channel || !(message.channel in processors)) {
@@ -227,31 +247,32 @@ slack_app.command("/reset", async ({ command, ack, say }) => {
         return;
     }
     const processor = processors[command.channel_id];
-    await processor.reset();
-    await say({
-        "text": `我已经忘记了我们之前的对话。现在可以重新开始向我提问了。\n> <@${command.user_id}> 已经重置会话历史`,
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "plain_text",
-                    "text": "我已经忘记了我们之前的对话。现在可以重新开始向我提问了。",
-                }
-            },
-            {
-                "type": "divider"
-            },
-            {
-                "type": "context",
-                "elements": [
-                    {
-                        "type": "mrkdwn",
-                        "text": `<@${command.user_id}> 已经重置会话历史`,
+    if (await processor.reset()) {
+        await say({
+            "text": `我已经忘记了我们之前的对话。现在可以重新开始向我提问了。\n> <@${command.user_id}> 已经重置会话历史`,
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "我已经忘记了我们之前的对话。现在可以重新开始向我提问了。",
                     }
-                ]
-            }
-        ]
-    });
+                },
+                {
+                    "type": "divider"
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": `<@${command.user_id}> 已经重置会话历史`,
+                        }
+                    ]
+                }
+            ]
+        });
+    }
 });
 
 // Main

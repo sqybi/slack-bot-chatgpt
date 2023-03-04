@@ -6,7 +6,16 @@
     "bot_token": "xoxb-xxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
     "app_token": "xapp-x-xxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "general_chat_message": {
-      "history_size": 20
+      "history_size": 20,
+      "channels": [
+        "XXXXXXXXXXX"
+      ]
+    },
+    "image": {
+      "image_size": "512x512",
+      "channels": [
+        "XXXXXXXXXXX"
+      ]
     }
   }
 }
