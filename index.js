@@ -8,6 +8,8 @@ import bolt from '@slack/bolt';
 
 import GeneralChatMessageProcessor from './processors/GeneralChatMessageProcessor.js';
 import ImageProcessor from './processors/ImageProcessor.js';
+import MentionedChatMessageProcessor from './processors/MentionedChatMessageProcessor.js';
+import process_message from './utils/process_message.js';
 
 // LowDB database
 // Usage:
@@ -22,7 +24,9 @@ const openai = new OpenAIApi(new Configuration({
 }));
 
 // Processors
-const processors = {};
+const processors = {
+    "@": new MentionedChatMessageProcessor(openai, db.data.slack.bot_id),
+};
 for (const channel of db.data.slack.general_chat_message.channels) {
     processors[channel] = new GeneralChatMessageProcessor(openai, db.data.slack.general_chat_message.history_size);
 }
@@ -37,34 +41,29 @@ const slack_app = new bolt.App({
     socketMode: true,
 });
 
+slack_app.event("app_mention", async (obj) => {
+    // Never process mention messages when channel is in the processors list.
+    if (obj.event.channel in processors) {
+        return;
+    }
+
+    const processor = processors["@"];
+    await process_message(processor, obj, obj.event);
+});
+
 // Slack app event handlers
 slack_app.message(async (obj) => {
-    const message = obj.message;
-    const client = obj.client;
-    if (!message.channel || !(message.channel in processors)) {
+    // Never process messages in DMs. Do not process messages which channel is not in processors list.
+    if (!obj.message.channel || !(obj.message.channel in processors)) {
         return;
     }
     // Do not response non-user messages. Do not response when messages are in threads.
-    if (message.subtype || message.thread_ts) {
-        return null;
+    if (obj.message.subtype || obj.message.thread_ts) {
+        return;
     }
-    await client.reactions.add({
-        channel: message.channel,
-        timestamp: message.ts,
-        name: "memo",
-    });
-    const processor = processors[message.channel];
-    const process_result = await processor.process(obj);
-    await client.reactions.remove({
-        channel: message.channel,
-        timestamp: message.ts,
-        name: "memo",
-    });
-    await client.reactions.add({
-        channel: message.channel,
-        timestamp: message.ts,
-        name: process_result ? "heavy_check_mark" : "x",
-    });
+
+    const processor = processors[obj.message.channel];
+    await process_message(processor, obj, obj.event);
 });
 
 slack_app.command("/reset", async (obj) => {

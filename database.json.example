@@ -5,6 +5,7 @@
   "slack": {
     "bot_token": "xoxb-xxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
     "app_token": "xapp-x-xxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "bot_id": "XXXXXXXXXXX",
     "general_chat_message": {
       "history_size": 20,
       "channels": [
