@@ -41,6 +41,8 @@ const slack_app = new bolt.App({
     socketMode: true,
 });
 
+// Slack app event handlers
+
 slack_app.event("app_mention", async (obj) => {
     // Never process mention messages when channel is in the processors list.
     if (obj.event.channel in processors) {
@@ -51,7 +53,6 @@ slack_app.event("app_mention", async (obj) => {
     await process_message(processor, obj, obj.event);
 });
 
-// Slack app event handlers
 slack_app.message(async (obj) => {
     // Never process messages in DMs. Do not process messages which channel is not in processors list.
     if (!obj.message.channel || !(obj.message.channel in processors)) {
