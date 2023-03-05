@@ -1,14 +1,22 @@
 {
   "name": "slack_bot_sqybi",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Slack bot for ChatGPT API integrations.",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sqybi/slack-bot-chatgpt.git"
+  },
+  "author": "sqybi",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sqybi/slack-bot-chatgpt/issues"
+  },
+  "homepage": "https://github.com/sqybi/slack-bot-chatgpt#readme",
   "dependencies": {
     "@slack/bolt": "^3.12.2",
     "lowdb": "^5.1.0",
