@@ -1,7 +1,7 @@
 import FixedSizeQueue from "../utils/FixedSizeQueue.js";
 
 export default class MentionedChatMessageProcessor {
-    constructor(openai, slack_bot_id) {
+    constructor(openai, slack_bot_id, system_prompt) {
         this.openai = openai;
         this.slack_bot_id = slack_bot_id;
     }
@@ -73,6 +73,10 @@ export default class MentionedChatMessageProcessor {
                 event.channel, event.user, text, event.thread_ts || event.ts,
                 `遇到未知错误，请检查是否文本过长，或重试一次！\n> 错误信息：\n${this.format_exc(error)}`));
         }
+        return false;
+    }
+
+    async system() {
         return false;
     }
 

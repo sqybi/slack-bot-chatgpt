@@ -45,6 +45,10 @@ export default class ImageProcessor {
         };
     }
 
+    async system() {
+        return false;
+    }
+
     async process({ message, say }) {
         try {
             const response = await this.openai.createImage({

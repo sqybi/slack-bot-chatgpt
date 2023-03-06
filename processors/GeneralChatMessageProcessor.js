@@ -1,10 +1,12 @@
 import FixedSizeQueue from "../utils/FixedSizeQueue.js";
 
 export default class GeneralChatMessageProcessor {
-    constructor(openai, history_size) {
+    constructor(openai, history_size, system_prompt) {
         this.openai = openai;
         this.history_size = history_size;
         this.history = new FixedSizeQueue(history_size);
+        this.default_system_prompt = system_prompt;
+        this.system_queries = [{ "role": "system", "content": system_prompt }];
     }
 
     format_exc(error) {
@@ -47,7 +49,7 @@ export default class GeneralChatMessageProcessor {
         try {
             const response = await this.openai.createChatCompletion({
                 model: "gpt-3.5-turbo",
-                messages: this.history.list().concat(current_query),
+                messages: this.system_queries.concat(this.history.list(), current_query),
             });
             const response_message = response.data.choices[0].message;
             const response_query = { "role": response_message.role, "content": response_message.content };
@@ -63,10 +65,49 @@ export default class GeneralChatMessageProcessor {
         return false;
     }
 
+    async system({ command }, reset) {
+        const text = command.text;
+        const reply = {
+            "text": "", //
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "",
+                    }
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "",
+                        }
+                    ]
+                }
+            ]
+        };
+        if (reset) {
+            this.system_queries = [{ "role": "system", "content": this.default_system_prompt }];
+            reply.text = `我已经重置了系统提示，现在的系统提示为：\`${this.default_system_prompt}\`。\n> <@${command.user_id}> 请求重置系统提示`;
+            reply.blocks[0].text.text = `我已经重置了系统提示，现在的系统提示为：\`${this.default_system_prompt}\`。`;
+            reply.blocks[1].text.text = `_<@${command.user_id}> 请求重置系统提示_`;
+        } else {
+            const system_prompt = text.trim();
+            this.system_queries = [{ "role": "system", "content": system_prompt }];
+            reply.text = `我已经设置了系统提示，现在的系统提示为：\`${system_prompt}\`。\n> <@${command.user_id}> 请求设置系统提示`;
+            reply.blocks[0].text.text = `我已经设置了系统提示，现在的系统提示为：\`${system_prompt}\`。`;
+            reply.blocks[1].text.text = `_<@${command.user_id}> 请求设置系统提示_`;
+        }
+        await(say(reply));
+        return true;
+    }
+
     async reset({ command, say }) {
         await this.history.clear();
         await say({
-            "text": `我已经忘记了我们之前的对话。现在可以重新开始向我提问了。\n> <@${command.user_id}> 已经重置会话历史`,
+            "text": `我已经忘记了我们之前的对话。现在可以重新开始向我提问了。\n> <@${command.user_id}> 请求重置会话历史`,
             "blocks": [
                 {
                     "type": "section",

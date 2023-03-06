@@ -78,6 +78,22 @@ slack_app.command("/reset", async (obj) => {
     await processor.reset(obj);
 });
 
+slack_app.command("/system", async (obj) => {
+    const command = obj.command;
+    const text = command.text;
+    const ack = obj.ack;
+    await ack();
+    if (!(command.channel_id in processors)) {
+        return;
+    }
+    const processor = processors[command.channel_id];
+    if (text.trim() === "") {
+        await processor.system(obj, true);
+    } else {
+        await processor.system(obj, false);
+    }
+});
+
 // Main
 (async () => {
     await slack_app.start();
