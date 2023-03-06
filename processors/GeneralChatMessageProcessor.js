@@ -68,12 +68,12 @@ export default class GeneralChatMessageProcessor {
     async system({ command, say }, reset) {
         const text = command.text;
         const reply = {
-            "text": "", //
+            "mrkdwn": "", //
             "blocks": [
                 {
                     "type": "section",
                     "text": {
-                        "type": "plain_text",
+                        "type": "mrkdwn",
                         "text": "",
                     }
                 },
