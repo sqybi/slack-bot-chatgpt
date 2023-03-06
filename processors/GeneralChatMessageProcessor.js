@@ -65,7 +65,7 @@ export default class GeneralChatMessageProcessor {
         return false;
     }
 
-    async system({ command }, reset) {
+    async system({ command, say }, reset) {
         const text = command.text;
         const reply = {
             "text": "", //
