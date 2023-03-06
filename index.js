@@ -28,7 +28,10 @@ const processors = {
     "@": new MentionedChatMessageProcessor(openai, db.data.slack.bot_id),
 };
 for (const channel of db.data.slack.general_chat_message.channels) {
-    processors[channel] = new GeneralChatMessageProcessor(openai, db.data.slack.general_chat_message.history_size);
+    processors[channel] = new GeneralChatMessageProcessor(
+        openai,
+        db.data.slack.general_chat_message.history_size,
+        db.data.slack.general_chat_message.default_system_prompt);
 }
 for (const channel of db.data.slack.image.channels) {
     processors[channel] = new ImageProcessor(openai, db.data.slack.image.image_size);
