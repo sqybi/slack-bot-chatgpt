@@ -90,15 +90,15 @@ export default class GeneralChatMessageProcessor {
         };
         if (reset) {
             this.system_queries = [{ "role": "system", "content": this.default_system_prompt }];
-            reply.text = `我已经重置了系统提示，现在的系统提示为：\`${this.default_system_prompt}\`。\n> <@${command.user_id}> 请求重置系统提示`;
-            reply.blocks[0].text.text = `我已经重置了系统提示，现在的系统提示为：\`${this.default_system_prompt}\`。`;
-            reply.blocks[1].elements.text = `_<@${command.user_id}> 请求重置系统提示_`;
+            reply.text = `我已经重置了系统提示，现在的系统提示为：\`${this.default_system_prompt}\`\n> <@${command.user_id}> 请求重置系统提示`;
+            reply.blocks[0].text.text = `我已经重置了系统提示，现在的系统提示为：\`${this.default_system_prompt}\``;
+            reply.blocks[1].elements[0].text = `_<@${command.user_id}> 请求重置系统提示_`;
         } else {
             const system_prompt = text.trim();
             this.system_queries = [{ "role": "system", "content": system_prompt }];
-            reply.text = `我已经设置了系统提示，现在的系统提示为：\`${system_prompt}\`。\n> <@${command.user_id}> 请求设置系统提示`;
-            reply.blocks[0].text.text = `我已经设置了系统提示，现在的系统提示为：\`${system_prompt}\`。`;
-            reply.blocks[1].elements.text = `_<@${command.user_id}> 请求设置系统提示_`;
+            reply.text = `我已经设置了系统提示，现在的系统提示为：\`${system_prompt}\`\n> <@${command.user_id}> 请求设置系统提示`;
+            reply.blocks[0].text.text = `我已经设置了系统提示，现在的系统提示为：\`${system_prompt}\``;
+            reply.blocks[1].elements[0].text = `_<@${command.user_id}> 请求设置系统提示_`;
         }
         await(say(reply));
         return true;
