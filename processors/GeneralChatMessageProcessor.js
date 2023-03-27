@@ -20,7 +20,7 @@ export default class GeneralChatMessageProcessor {
                 {
                     "type": "section",
                     "text": {
-                        "type": "plain_text",
+                        "type": "mrkdwn",
                         "text": reply,
                     }
                 },

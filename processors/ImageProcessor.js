@@ -17,7 +17,7 @@ export default class ImageProcessor {
         } : {
             "type": "section",
             "text": {
-                "type": "plain_text",
+                "type": "mrkdwn",
                 "text": reply,
             }
         };

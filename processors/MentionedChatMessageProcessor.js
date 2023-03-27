@@ -19,7 +19,7 @@ export default class MentionedChatMessageProcessor {
                 {
                     "type": "section",
                     "text": {
-                        "type": "plain_text",
+                        "type": "mrkdwn",
                         "text": reply,
                     }
                 },
