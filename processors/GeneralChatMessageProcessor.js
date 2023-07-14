@@ -1,12 +1,13 @@
 import FixedSizeQueue from "../utils/FixedSizeQueue.js";
 
 export default class GeneralChatMessageProcessor {
-    constructor(openai, history_size, system_prompt) {
+    constructor(openai, history_size, system_prompt, model) {
         this.openai = openai;
         this.history_size = history_size;
         this.history = new FixedSizeQueue(history_size);
         this.default_system_prompt = system_prompt;
         this.system_queries = [{ "role": "system", "content": system_prompt }];
+        this.model = model;
     }
 
     format_exc(error) {
@@ -48,7 +49,7 @@ export default class GeneralChatMessageProcessor {
         const current_query = { "role": "user", "content": message.text };
         try {
             const response = await this.openai.createChatCompletion({
-                model: "gpt-3.5-turbo",
+                model: this.model,
                 messages: this.system_queries.concat(this.history.list(), current_query),
             });
             const response_message = response.data.choices[0].message;

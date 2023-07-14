@@ -1,6 +1,10 @@
 {
   "openai": {
-    "secret_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    "secret_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "model": {
+      "general_chat_message": "gpt-3.5-turbo",
+      "mentioned_chat_message": "gpt-3.5-turbo"
+    }
   },
   "slack": {
     "bot_token": "xoxb-xxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
@@ -12,6 +16,9 @@
       "channels": [
         "XXXXXXXXXXX"
       ]
+    },
+    "mentioned_chat_message": {
+      "system_prompt": "You are ChatGPT, a large language model trained by OpenAI. Knowledge cutoff: 2021-09 Current date: 2023-03-04"
     },
     "image": {
       "image_size": "512x512",

@@ -1,9 +1,11 @@
 import FixedSizeQueue from "../utils/FixedSizeQueue.js";
 
 export default class MentionedChatMessageProcessor {
-    constructor(openai, slack_bot_id, system_prompt) {
+    constructor(openai, slack_bot_id, system_prompt, model) {
         this.openai = openai;
         this.slack_bot_id = slack_bot_id;
+        this.system_prompt = system_prompt;
+        this.model = model;
     }
 
     format_exc(error) {
@@ -60,8 +62,11 @@ export default class MentionedChatMessageProcessor {
         const text = await this.remove_mention(event.text);
         try {
             const response = await this.openai.createChatCompletion({
-                model: "gpt-3.5-turbo",
-                messages: [{ "role": "user", "content": text }],
+                model: this.model,
+                messages: [
+                    { "role": "system", "content": this.system_prompt },
+                    { "role": "user", "content": text },
+                ],
             });
             const response_message = response.data.choices[0].message;
             await client.chat.postMessage(await this.build_bot_reply(

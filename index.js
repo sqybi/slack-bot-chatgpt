@@ -25,13 +25,18 @@ const openai = new OpenAIApi(new Configuration({
 
 // Processors
 const processors = {
-    "@": new MentionedChatMessageProcessor(openai, db.data.slack.bot_id),
+    "@": new MentionedChatMessageProcessor(
+        openai,
+        db.data.slack.bot_id,
+        db.data.slack.mentioned_chat_message.system_prompt,
+        db.data.openai.model.mentioned_chat_message),
 };
 for (const channel of db.data.slack.general_chat_message.channels) {
     processors[channel] = new GeneralChatMessageProcessor(
         openai,
         db.data.slack.general_chat_message.history_size,
-        db.data.slack.general_chat_message.default_system_prompt);
+        db.data.slack.general_chat_message.default_system_prompt,
+        db.data.openai.model.general_chat_message);
 }
 for (const channel of db.data.slack.image.channels) {
     processors[channel] = new ImageProcessor(openai, db.data.slack.image.image_size);
